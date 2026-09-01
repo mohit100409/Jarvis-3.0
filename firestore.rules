@@ -1,0 +1,48 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Safety Net default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Schema Validation Helpers
+    function isValidUserProfile(data) {
+      return data != null;
+    }
+
+    function isValidChatSession(data) {
+      return data.id is string && data.id.size() <= 128;
+    }
+
+    function isValidJarvisMemory(data) {
+      return data.id is string && data.id.size() <= 128 && data.text is string;
+    }
+
+    function isValidJarvisBehaviorRule(data) {
+      return data.id is string && data.id.size() <= 128 && data.rule is string;
+    }
+
+    match /users/{userId} {
+      allow read, write: if (request.auth != null && request.auth.uid == userId) || (userId == "anonymous_user");
+
+      match /{document=**} {
+        allow read, write: if (request.auth != null && request.auth.uid == userId) || (userId == "anonymous_user");
+      }
+    }
+  }
+}
